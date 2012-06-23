@@ -10,7 +10,7 @@ module RecordCache
         [options[:index]].flatten.compact.map do |attribute|
           type = base.columns_hash[attribute.to_s].try(:type)
           raise "No column found for index '#{attribute}' on #{base.name}." unless type
-          raise "Incorrect type (expected integer, found #{type}) for index '#{attribute}' on #{base.name}." unless type == :integer
+          raise "Incorrect type (expected string or integer, found #{type}) for index '#{attribute}' on #{base.name}." unless [:integer, :string].include?(type)
           IndexCache.new(base, attribute, record_store, options)
         end
       end
@@ -80,7 +80,7 @@ module RecordCache
         RecordCache::Base.without_record_cache do
           # go straight to SQL result for optimal performance
           sql = @base.select('id').where(@attribute => value).to_sql
-          ids = []; @base.connection.execute(sql).each{ |row| ids << (row.is_a?(Hash) ? row['id'] : row.first).to_i }
+          ids = []; @base.connection.execute(sql).each{ |row| ids << (row.is_a?(Hash) ? row['id'] : row.first) }
           record_store.write(versioned_key, ids)
           ids
         end
